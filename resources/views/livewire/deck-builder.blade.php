@@ -1,65 +1,161 @@
-<div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; font-family: system-ui, sans-serif;">
+<div class="db-layout">
     {{-- COLONNA SINISTRA: FILTRI + LISTA CARTE --}}
-    <div style="flex: 1; min-width: 280px;">
-        <h2 style="margin-bottom: 0.5rem;">Carte disponibili</h2>
-
-        {{-- DEBUG: vedi cosa sta leggendo Livewire --}}
-        <p style="font-size: 0.8rem; color:#aaa;">
-            Filtro nome: "{{ $search }}" |
-            Costo min: {{ $costMin ?? 'null' }} |
-            Costo max: {{ $costMax ?? 'null' }}
-        </p>
+    <section class="db-panel">
+        <div class="db-panel-header">
+            <div>
+                <h2 class="db-panel-title">Carte disponibili</h2>
+                <p class="db-panel-caption">
+                    Filtra per nome e costo, poi aggiungi al deck con il pulsante <strong>+</strong>.
+                </p>
+            </div>
+        </div>
 
         {{-- FILTRI --}}
-        <div style="margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #444; border-radius: 8px;">
-            <div style="margin-bottom: 0.5rem;">
-                <label>Ricerca per nome</label><br>
+        <div class="db-filters">
+            <div>
+                <label class="db-label">Ricerca per nome</label>
                 <input
                     type="text"
                     wire:model.live.debounce.300ms="search"
-                    placeholder="Es. Perona"
-                    style="width: 100%; padding: 0.4rem; border-radius: 4px; border: 1px solid #666; background:#111; color:#eee;"
+                    placeholder="Es. Perona, Luffy..."
+                    class="db-input"
                 >
             </div>
 
-            <div style="display: flex; gap: 0.5rem;">
-                <div style="flex: 1;">
-                    <label>Costo min</label><br>
+            <div class="db-filters-row">
+                <div>
+                    <label class="db-label">Costo minimo</label>
                     <input
                         type="number"
                         min="0"
                         wire:model.live="costMin"
-                        style="width: 100%; padding: 0.3rem; border-radius: 4px; border: 1px solid #666; background:#111; color:#eee;"
+                        class="db-input-number"
                     >
                 </div>
-                <div style="flex: 1;">
-                    <label>Costo max</label><br>
+                <div>
+                    <label class="db-label">Costo massimo</label>
                     <input
                         type="number"
                         min="0"
                         wire:model.live="costMax"
-                        style="width: 100%; padding: 0.3rem; border-radius: 4px; border: 1px solid #666; background:#111; color:#eee;"
+                        class="db-input-number"
                     >
+                </div>
+            </div>
+            <div>
+                <label class="db-label">Colore</label>
+
+                <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedColors" value="Red">
+                        <span style="color:#ef4444;">Red</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedColors" value="Blue">
+                        <span style="color:#60a5fa;">Blue</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedColors" value="Green">
+                        <span style="color:#4ade80;">Green</span>
+                    </label>
+
+                     <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedColors" value="Purple">
+                        <span style="color:#a855f7;">Purple</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedColors" value="Black">
+                        <span style="color:#6b7280;">Black</span>
+                    </label>
+
+                   <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedColors" value="Yellow">
+                        <span style="color:#facc15;">Yellow</span>
+                    </label>
+
+                </div>
+            </div>
+            <div>
+                <label class="db-label">Tipo di carta</label>
+
+                <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedTypes" value="Character">
+                        <span>Character</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedTypes" value="Event">
+                        <span>Event</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedTypes" value="Stage">
+                        <span>Stage</span>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label class="db-label">Ordina per</label>
+
+                <div class="db-filters-row">
+                    <select
+                        wire:model.live="sortField"
+                        class="db-input"
+                    >
+                        <option value="cost">Costo</option>
+                        <option value="color">Colore</option>
+                        <option value="power">Potenza</option>
+                    </select>
+
+                    <button
+                        type="button"
+                        wire:click="toggleSortDirection"
+                        class="db-btn db-btn-primary"
+                        style="width: 90px;"
+                    >
+                        @if ($sortDirection === 'asc')
+                            ↑ asc
+                        @else
+                            ↓ desc
+                        @endif
+                    </button>
                 </div>
             </div>
         </div>
 
-        {{-- LISTA CARTE FILTRATE (ATTENZIONE: filteredCards, NON cards) --}}
+        {{-- LISTA CARTE --}}
         @if (count($filteredCards) === 0)
-            <p>Nessuna carta trovata con questi filtri.</p>
+            <p class="db-deck-empty">Nessuna carta trovata con questi filtri.</p>
         @else
-            <ul style="list-style: none; padding-left: 0; max-height: 400px; overflow-y: auto; border: 1px solid #333; border-radius: 8px;">
+            <ul class="db-card-list">
                 @foreach ($filteredCards as $card)
-                    <li style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #222; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <strong>{{ $card['name'] }}</strong>
-                            <div style="font-size: 0.85rem; color:#aaa;">
-                                Costo: {{ $card['cost'] }} | Colore: {{ $card['color'] ?? 'N/A' }}
+                    <li class="db-card-row">
+                        <div class="db-card-main">
+                            <div class="db-card-name">
+                                {{ $card['name'] }} <span style="color: var(--muted); font-size: 0.75rem;">({{ $card['id'] }})</span>
+                            </div>
+                            <div class="db-card-meta">
+                                <span>Costo {{ $card['cost'] }}</span>
+                                @if (!empty($card['power']))
+                                    <span>Power {{ $card['power'] }}</span>
+                                @endif
+                                @if (!empty($card['color']))
+                                    <span>{{ $card['color'] }}</span>
+                                @endif
+                                @if (!empty($card['type']))
+                                    <span>{{ $card['type'] }}</span>
+                                @endif
                             </div>
                         </div>
                         <button
                             wire:click="addCard('{{ $card['id'] }}')"
-                            style="padding: 0.25rem 0.6rem; border-radius: 4px; border: none; background:#2dd4bf; color:#000; cursor:pointer;"
+                            class="db-btn db-btn-primary"
                         >
                             +
                         </button>
@@ -67,62 +163,93 @@
                 @endforeach
             </ul>
         @endif
-    </div>
+    </section>
 
     {{-- COLONNA DESTRA: DECK + STATISTICHE --}}
-    <div style="flex: 1; min-width: 280px;">
-        <h2 style="margin-bottom: 0.5rem;">Deck: {{ $deckName }}</h2>
-
-        {{-- STATISTICHE --}}
-        <div style="margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #444; border-radius: 8px;">
-            <h3 style="margin-top:0; margin-bottom:0.5rem; font-size:1rem;">Statistiche deck</h3>
-            <p style="margin:0.2rem 0;">Totale carte: <strong>{{ $stats['totalCards'] }}</strong></p>
-            <p style="margin:0.2rem 0;">Costo medio: <strong>{{ $stats['avgCost'] }}</strong></p>
-
-            <div style="margin-top:0.5rem;">
-                <strong>Curva costi:</strong>
-                @if (empty($stats['curve']))
-                    <span> nessuna carta ancora.</span>
-                @else
-                    <ul style="list-style:none; padding-left:0; margin:0.25rem 0 0;">
-                        @foreach ($stats['curve'] as $cost => $qty)
-                            <li style="font-size:0.85rem;">
-                                Costo {{ $cost }} → {{ $qty }} carta/e
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
+    <section class="db-panel">
+        <div class="db-panel-header">
+            <div>
+                <h2 class="db-panel-title">Deck: {{ $deckName }}</h2>
+                <p class="db-panel-caption">
+                    Aggiungi carte dal pannello a sinistra e osserva come cambiano le statistiche.
+                </p>
             </div>
         </div>
 
-        {{-- LISTA CARTE NEL DECK --}}
-        <div style="border: 1px solid #333; border-radius: 8px; padding:0.75rem;">
+        {{-- STATISTICHE --}}
+        <div class="db-stats">
+            <div class="db-stats-row">
+                <span>Totale carte</span>
+                <span><strong>{{ $stats['totalCards'] }}</strong></span>
+            </div>
+            <div class="db-stats-row">
+                <span>Costo medio</span>
+                <span><strong>{{ $stats['avgCost'] }}</strong></span>
+            </div>
+            <div>
+    <span class="db-label">Curva dei costi</span>
+    @if (empty($stats['curve']))
+        <p class="db-deck-empty">Aggiungi qualche carta per vedere la curva.</p>
+    @else
+        @php
+            $maxQty = max($stats['curve']);
+        @endphp
+
+        <div class="db-curve-chart">
+            @foreach ($stats['curve'] as $cost => $qty)
+                @php
+                    $percent = $maxQty > 0 ? ($qty / $maxQty) * 100 : 0;
+                @endphp
+                <div class="db-curve-row">
+                    <div class="db-curve-cost">C{{ $cost }}</div>
+                    <div class="db-curve-bar-track">
+                        <div class="db-curve-bar-fill" style="width: {{ $percent }}%;"></div>
+                    </div>
+                    <div class="db-curve-qty">{{ $qty }}</div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+</div>
+        </div>
+
+        {{-- DECK LIST --}}
+        <div class="db-deck-box">
             @if (empty($deck))
-                <p>Nessuna carta nel deck.</p>
+                <p class="db-deck-empty">
+                    Nessuna carta nel deck. Usa il pulsante <strong>+</strong> sulle carte per aggiungerle.
+                </p>
             @else
-                <ul style="list-style:none; padding-left:0;">
+                <ul class="db-deck-list">
                     @foreach ($deck as $cardId => $entry)
-                        <li style="margin-bottom: 0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <li class="db-deck-row">
                             <div>
-                                <strong>{{ $entry['info']['name'] }}</strong>
-                                <div style="font-size:0.85rem; color:#aaa;">
-                                    Costo {{ $entry['info']['cost'] }} | Q.tà: {{ $entry['quantity'] }}
+                                <div class="db-card-name">
+                                    {{ $entry['info']['name'] }}
+                                    <span style="color: var(--muted); font-size: 0.75rem;">({{ $entry['info']['id'] }})</span>
+                                </div>
+                                <div class="db-deck-meta">
+                                    Costo {{ $entry['info']['cost'] }} · Q.tà: {{ $entry['quantity'] }}
                                 </div>
                             </div>
-                            <div>
+                            <div class="db-deck-actions">
                                 <button
                                     wire:click="removeCard('{{ $cardId }}')"
-                                    style="padding: 0.2rem 0.5rem; border-radius: 4px; border:none; background:#ef4444; color:#fff; cursor:pointer; margin-right:0.25rem;"
-                                >-</button>
+                                    class="db-btn db-btn-danger"
+                                >
+                                    –
+                                </button>
                                 <button
                                     wire:click="addCard('{{ $cardId }}')"
-                                    style="padding: 0.2rem 0.5rem; border-radius: 4px; border:none; background:#22c55e; color:#000; cursor:pointer;"
-                                >+</button>
+                                    class="db-btn db-btn-primary"
+                                >
+                                    +
+                                </button>
                             </div>
                         </li>
                     @endforeach
                 </ul>
             @endif
         </div>
-    </div>
+    </section>
 </div>

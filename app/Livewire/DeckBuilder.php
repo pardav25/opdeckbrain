@@ -8,17 +8,15 @@ use Livewire\Attributes\Computed;
 class DeckBuilder extends Component
 {
     public string $deckName = 'Nuovo Deck';
-
-    // carte disponibili (per ora fisse, poi le prenderemo dall'API)
     public array $cards = [];
-
-    // deck: [cardId => ['info' => [...], 'quantity' => int]]
     public array $deck = [];
-
-    // filtri
+    public array $selectedColors = [];
+    public array $selectedTypes = [];
     public string $search = '';
     public ?int $costMin = null;
     public ?int $costMax = null;
+    public string $sortField = 'cost'; // cost | color | power
+    public string $sortDirection = 'asc';
 
     public function mount(): void
     {
@@ -28,6 +26,7 @@ class DeckBuilder extends Component
                 'id'    => 'OP01-077',
                 'name'  => 'Perona',
                 'cost'  => 1,
+                'power' => 2000,
                 'color' => 'Blue',
                 'type'  => 'Character',
             ],
@@ -35,6 +34,7 @@ class DeckBuilder extends Component
                 'id'    => 'OP01-015',
                 'name'  => 'Tony Tony.Chopper',
                 'cost'  => 3,
+                'power' => 4000,
                 'color' => 'Red',
                 'type'  => 'Character',
             ],
@@ -42,6 +42,7 @@ class DeckBuilder extends Component
                 'id'    => 'OP01-001',
                 'name'  => 'Monkey D. Luffy',
                 'cost'  => 4,
+                'power' => 5000,
                 'color' => 'Red',
                 'type'  => 'Character',
             ],
@@ -51,9 +52,9 @@ class DeckBuilder extends Component
     #[Computed]
     public function filteredCards(): array
     {
-        return collect($this->cards)
+        $collection = collect($this->cards)
             ->filter(function (array $card) {
-                // filtro per nome
+                // filtro nome
                 if ($this->search !== '' &&
                     stripos($card['name'], $this->search) === false) {
                     return false;
@@ -73,10 +74,45 @@ class DeckBuilder extends Component
                     return false;
                 }
 
+                // filtro colori (multi)
+                if (!empty($this->selectedColors)) {
+                    if (!in_array(
+                        strtolower($card['color']),
+                        array_map('strtolower', $this->selectedColors)
+                    )) {
+                        return false;
+                    }
+                }
+
+                // filtro tipologia (multi)
+                if (!empty($this->selectedTypes)) {
+                    if (!in_array(
+                        strtolower($card['type']),
+                        array_map('strtolower', $this->selectedTypes)
+                    )) {
+                        return false;
+                    }
+                }
+
                 return true;
-            })
-            ->values()
-            ->all();
+            });
+
+        // ORDINAMENTO
+        $directionDesc = $this->sortDirection === 'desc';
+
+        $collection = $collection->sortBy(function (array $card) {
+            switch ($this->sortField) {
+                case 'color':
+                    return strtolower($card['color'] ?? '');
+                case 'power':
+                    return $card['power'] ?? 0;
+                case 'cost':
+                default:
+                    return $card['cost'] ?? 0;
+            }
+        }, SORT_REGULAR, $directionDesc);
+
+        return $collection->values()->all();
     }
 
     #[Computed]
@@ -142,8 +178,13 @@ class DeckBuilder extends Component
     public function render()
     {
         return view('livewire.deck-builder', [
-            'filteredCards' => $this->filteredCards, // computed
-            'stats'         => $this->stats,         // computed
+            'filteredCards' => $this->filteredCards,
+            'stats'         => $this->stats,
         ]);
+    }
+
+    public function toggleSortDirection(): void
+    {
+        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
     }
 }
