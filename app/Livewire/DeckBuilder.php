@@ -12,6 +12,7 @@ class DeckBuilder extends Component
     public array $deck = [];
     public array $selectedColors = [];
     public array $selectedTypes = [];
+    public array $selectedCounters = [];
     public string $search = '';
     public ?int $costMin = null;
     public ?int $costMax = null;
@@ -29,6 +30,7 @@ class DeckBuilder extends Component
                 'power' => 2000,
                 'color' => 'Blue',
                 'type'  => 'Character',
+                'counter_amount' => 1000,
             ],
             [
                 'id'    => 'OP01-015',
@@ -37,6 +39,7 @@ class DeckBuilder extends Component
                 'power' => 4000,
                 'color' => 'Red',
                 'type'  => 'Character',
+                'counter_amount' => 2000,
             ],
             [
                 'id'    => 'OP01-001',
@@ -45,15 +48,32 @@ class DeckBuilder extends Component
                 'power' => 5000,
                 'color' => 'Red',
                 'type'  => 'Character',
+                'counter_amount' => 0,
             ],
         ];
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search         = '';
+        $this->costMin        = null;
+        $this->costMax        = null;
+        $this->selectedColors = [];
+        $this->selectedTypes  = [];
+        $this->sortField      = 'cost';
+        $this->sortDirection  = 'asc';
+        $this->selectedCounters = [];
     }
 
     #[Computed]
     public function filteredCards(): array
     {
+        $selectedColorsLower = array_map('strtolower', $this->selectedColors);
+        $selectedTypesLower  = array_map('strtolower', $this->selectedTypes);
+        $selectedCountersInt = array_map('intval', $this->selectedCounters);
+
         $collection = collect($this->cards)
-            ->filter(function (array $card) {
+            ->filter(function (array $card) use ($selectedColorsLower, $selectedTypesLower, $selectedCountersInt) {
                 // filtro nome
                 if ($this->search !== '' &&
                     stripos($card['name'], $this->search) === false) {
@@ -75,21 +95,31 @@ class DeckBuilder extends Component
                 }
 
                 // filtro colori (multi)
-                if (!empty($this->selectedColors)) {
-                    if (!in_array(
-                        strtolower($card['color']),
-                        array_map('strtolower', $this->selectedColors)
-                    )) {
+                if (!empty($selectedColorsLower)) {
+                    if (!in_array(strtolower($card['color'] ?? ''), $selectedColorsLower, true)) {
                         return false;
                     }
                 }
 
                 // filtro tipologia (multi)
-                if (!empty($this->selectedTypes)) {
-                    if (!in_array(
-                        strtolower($card['type']),
-                        array_map('strtolower', $this->selectedTypes)
-                    )) {
+                if (!empty($selectedTypesLower)) {
+                    if (!in_array(strtolower($card['type'] ?? ''), $selectedTypesLower, true)) {
+                        return false;
+                    }
+                }
+
+                // 🔥 filtro counter (solo Character)
+                if (!empty($selectedCountersInt)) {
+                    // se non è Character → esclusa
+                    if (strtolower($card['type'] ?? '') !== 'character') {
+                        return false;
+                    }
+
+                    $cardCounter = isset($card['counter_amount'])
+                        ? (int)$card['counter_amount']
+                        : 0;
+
+                    if (!in_array($cardCounter, $selectedCountersInt, true)) {
                         return false;
                     }
                 }
@@ -113,6 +143,21 @@ class DeckBuilder extends Component
         }, SORT_REGULAR, $directionDesc);
 
         return $collection->values()->all();
+    }
+
+    #[Computed]
+    public function activeFiltersCount(): int
+    {
+        $count = 0;
+
+        if ($this->search !== '') $count++;
+        if ($this->costMin !== null && $this->costMin !== '') $count++;
+        if ($this->costMax !== null && $this->costMax !== '') $count++;
+        if (!empty($this->selectedColors)) $count++;
+        if (!empty($this->selectedTypes)) $count++;
+        if (!empty($this->selectedCounters)) $count++;
+
+        return $count;
     }
 
     #[Computed]
@@ -180,6 +225,9 @@ class DeckBuilder extends Component
         return view('livewire.deck-builder', [
             'filteredCards' => $this->filteredCards,
             'stats'         => $this->stats,
+            'totalCards'    => count($this->cards),
+            'activeFiltersCount' => $this->activeFiltersCount,
+            'counter_amount' => $card['counter_amount'] ?? 0,
         ]);
     }
 

@@ -1,12 +1,28 @@
 <div class="db-layout">
     {{-- COLONNA SINISTRA: FILTRI + LISTA CARTE --}}
     <section class="db-panel">
-        <div class="db-panel-header">
+       <div class="db-panel-header">
             <div>
                 <h2 class="db-panel-title">Carte disponibili</h2>
                 <p class="db-panel-caption">
-                    Filtra per nome e costo, poi aggiungi al deck con il pulsante <strong>+</strong>.
+                    Filtra per nome, costo, colore e tipo, poi aggiungi al deck con il pulsante <strong>+</strong>.
                 </p>
+            </div>
+
+            <div style="text-align: right; font-size: 0.75rem; display:flex; flex-direction:column; gap:0.25rem; align-items:flex-end;">
+
+                {{-- Badge risultati --}}
+                <div class="db-badge">
+                    {{ count($filteredCards) }} / {{ $totalCards }} risultati
+                </div>
+
+                {{-- Badge filtri attivi (solo se > 0) --}}
+                @if ($activeFiltersCount > 0)
+                    <div class="db-badge" style="background: var(--accent-soft); color: var(--accent); border-color: var(--accent);">
+                        Filtri attivi: {{ $activeFiltersCount }}
+                    </div>
+                @endif
+
             </div>
         </div>
 
@@ -101,6 +117,32 @@
                 </div>
             </div>
             <div>
+                <label class="db-label">Counter</label>
+
+                <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedCounters" value="0">
+                        <span>0</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedCounters" value="1000">
+                        <span>1000</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedCounters" value="2000">
+                        <span>2000</span>
+                    </label>
+
+                </div>
+
+                <p class="db-panel-caption" style="margin-top:4px;">
+                    (Valido solo per carte Character)
+                </p>
+            </div>
+            <div>
                 <label class="db-label">Ordina per</label>
 
                 <div class="db-filters-row">
@@ -126,6 +168,16 @@
                         @endif
                     </button>
                 </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:0.25rem;">
+                <button
+                    type="button"
+                    wire:click="resetFilters"
+                    class="db-btn"
+                    style="background: transparent; border: 1px solid var(--border); color: var(--muted); padding-inline: 0.75rem;"
+                >
+                    Reset filtri
+                </button>
             </div>
         </div>
 
