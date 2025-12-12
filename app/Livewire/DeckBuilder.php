@@ -3,77 +3,72 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\Attributes\Computed;
 
 class DeckBuilder extends Component
 {
-    public $deckName = 'Nuovo Deck';
+    public string $deckName = 'Nuovo Deck';
 
-    // dati grezzi (per ora finti, poi li prenderemo dal DB)
-    public $cards = [];
+    // carte disponibili (per ora fisse, poi le prenderemo dall'API)
+    public array $cards = [];
 
-    // stato del deck: [cardId => ['info' => [...], 'quantity' => int]]
-    public $deck = [];
+    // deck: [cardId => ['info' => [...], 'quantity' => int]]
+    public array $deck = [];
 
     // filtri
-    public $search = '';
-    public $costMin = null;
-    public $costMax = null;
+    public string $search = '';
+    public ?int $costMin = null;
+    public ?int $costMax = null;
 
-    public function mount()
+    public function mount(): void
     {
-        // Per ora simuliamo qualche carta finta
+        // Dati di esempio, simulano il formato "normalizzato" delle carte
         $this->cards = [
-            ['id' => 1, 'name' => 'Luffy', 'cost' => 3, 'color' => 'RED'],
-            ['id' => 2, 'name' => 'Zoro',  'cost' => 2, 'color' => 'GREEN'],
-            ['id' => 3, 'name' => 'Nami',  'cost' => 1, 'color' => 'BLUE'],
-            ['id' => 4, 'name' => 'Sanji', 'cost' => 4, 'color' => 'YELLOW'],
-            ['id' => 5, 'name' => 'Usopp', 'cost' => 2, 'color' => 'RED'],
+            [
+                'id'    => 'OP01-077',
+                'name'  => 'Perona',
+                'cost'  => 1,
+                'color' => 'Blue',
+                'type'  => 'Character',
+            ],
+            [
+                'id'    => 'OP01-015',
+                'name'  => 'Tony Tony.Chopper',
+                'cost'  => 3,
+                'color' => 'Red',
+                'type'  => 'Character',
+            ],
+            [
+                'id'    => 'OP01-001',
+                'name'  => 'Monkey D. Luffy',
+                'cost'  => 4,
+                'color' => 'Red',
+                'type'  => 'Character',
+            ],
         ];
     }
 
-    public function addCard($cardId)
-    {
-        if (!isset($this->deck[$cardId])) {
-            $card = collect($this->cards)->firstWhere('id', $cardId);
-            if ($card) {
-                $this->deck[$cardId] = [
-                    'info' => $card,
-                    'quantity' => 1,
-                ];
-            }
-        } else {
-            $this->deck[$cardId]['quantity']++;
-        }
-    }
-
-    public function removeCard($cardId)
-    {
-        if (isset($this->deck[$cardId])) {
-            $this->deck[$cardId]['quantity']--;
-            if ($this->deck[$cardId]['quantity'] <= 0) {
-                unset($this->deck[$cardId]);
-            }
-        }
-    }
-
-    protected function getFilteredCards()
+    #[Computed]
+    public function filteredCards(): array
     {
         return collect($this->cards)
-            ->filter(function ($card) {
+            ->filter(function (array $card) {
                 // filtro per nome
                 if ($this->search !== '' &&
                     stripos($card['name'], $this->search) === false) {
                     return false;
                 }
 
-                // filtro per costo minimo
-                if ($this->costMin !== null && $this->costMin !== '' &&
+                // filtro costo minimo
+                if ($this->costMin !== null &&
+                    $this->costMin !== '' &&
                     $card['cost'] < $this->costMin) {
                     return false;
                 }
 
-                // filtro per costo massimo
-                if ($this->costMax !== null && $this->costMax !== '' &&
+                // filtro costo massimo
+                if ($this->costMax !== null &&
+                    $this->costMax !== '' &&
                     $card['cost'] > $this->costMax) {
                     return false;
                 }
@@ -84,18 +79,19 @@ class DeckBuilder extends Component
             ->all();
     }
 
-    protected function getDeckStats()
+    #[Computed]
+    public function stats(): array
     {
         $totalCards = 0;
-        $totalCost = 0;
-        $curve = []; // cost => quantity
+        $totalCost  = 0;
+        $curve      = [];
 
         foreach ($this->deck as $entry) {
-            $qty = $entry['quantity'];
-            $cost = $entry['info']['cost'];
+            $qty  = $entry['quantity'];
+            $cost = $entry['info']['cost'] ?? 0;
 
             $totalCards += $qty;
-            $totalCost += $cost * $qty;
+            $totalCost  += $cost * $qty;
 
             if (!isset($curve[$cost])) {
                 $curve[$cost] = 0;
@@ -107,19 +103,47 @@ class DeckBuilder extends Component
 
         return [
             'totalCards' => $totalCards,
-            'avgCost'    => $totalCards > 0 ? round($totalCost / $totalCards, 2) : 0,
+            'avgCost'    => $totalCards > 0
+                ? round($totalCost / $totalCards, 2)
+                : 0,
             'curve'      => $curve,
         ];
     }
 
+    public function addCard(string $cardId): void
+    {
+        if (!isset($this->deck[$cardId])) {
+            $card = collect($this->cards)->firstWhere('id', $cardId);
+
+            if ($card) {
+                $this->deck[$cardId] = [
+                    'info'     => $card,
+                    'quantity' => 1,
+                ];
+            }
+        } else {
+            $this->deck[$cardId]['quantity']++;
+        }
+    }
+
+    public function removeCard(string $cardId): void
+    {
+        if (!isset($this->deck[$cardId])) {
+            return;
+        }
+
+        $this->deck[$cardId]['quantity']--;
+
+        if ($this->deck[$cardId]['quantity'] <= 0) {
+            unset($this->deck[$cardId]);
+        }
+    }
+
     public function render()
     {
-        $filteredCards = $this->getFilteredCards();
-        $stats = $this->getDeckStats();
-
         return view('livewire.deck-builder', [
-            'filteredCards' => $filteredCards,
-            'stats'         => $stats,
+            'filteredCards' => $this->filteredCards, // computed
+            'stats'         => $this->stats,         // computed
         ]);
     }
 }

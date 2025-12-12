@@ -3,6 +3,13 @@
     <div style="flex: 1; min-width: 280px;">
         <h2 style="margin-bottom: 0.5rem;">Carte disponibili</h2>
 
+        {{-- DEBUG: vedi cosa sta leggendo Livewire --}}
+        <p style="font-size: 0.8rem; color:#aaa;">
+            Filtro nome: "{{ $search }}" |
+            Costo min: {{ $costMin ?? 'null' }} |
+            Costo max: {{ $costMax ?? 'null' }}
+        </p>
+
         {{-- FILTRI --}}
         <div style="margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #444; border-radius: 8px;">
             <div style="margin-bottom: 0.5rem;">
@@ -10,7 +17,7 @@
                 <input
                     type="text"
                     wire:model.live.debounce.300ms="search"
-                    placeholder="Es. Luffy"
+                    placeholder="Es. Perona"
                     style="width: 100%; padding: 0.4rem; border-radius: 4px; border: 1px solid #666; background:#111; color:#eee;"
                 >
             </div>
@@ -37,7 +44,7 @@
             </div>
         </div>
 
-        {{-- LISTA CARTE FILTRATE --}}
+        {{-- LISTA CARTE FILTRATE (ATTENZIONE: filteredCards, NON cards) --}}
         @if (count($filteredCards) === 0)
             <p>Nessuna carta trovata con questi filtri.</p>
         @else
@@ -47,11 +54,11 @@
                         <div>
                             <strong>{{ $card['name'] }}</strong>
                             <div style="font-size: 0.85rem; color:#aaa;">
-                                Costo: {{ $card['cost'] }} | Colore: {{ $card['color'] }}
+                                Costo: {{ $card['cost'] }} | Colore: {{ $card['color'] ?? 'N/A' }}
                             </div>
                         </div>
                         <button
-                            wire:click="addCard({{ $card['id'] }})"
+                            wire:click="addCard('{{ $card['id'] }}')"
                             style="padding: 0.25rem 0.6rem; border-radius: 4px; border: none; background:#2dd4bf; color:#000; cursor:pointer;"
                         >
                             +
@@ -104,11 +111,11 @@
                             </div>
                             <div>
                                 <button
-                                    wire:click="removeCard({{ $cardId }})"
+                                    wire:click="removeCard('{{ $cardId }}')"
                                     style="padding: 0.2rem 0.5rem; border-radius: 4px; border:none; background:#ef4444; color:#fff; cursor:pointer; margin-right:0.25rem;"
                                 >-</button>
                                 <button
-                                    wire:click="addCard({{ $cardId }})"
+                                    wire:click="addCard('{{ $cardId }}')"
                                     style="padding: 0.2rem 0.5rem; border-radius: 4px; border:none; background:#22c55e; color:#000; cursor:pointer;"
                                 >+</button>
                             </div>

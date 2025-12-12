@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'cards_api' => [
+        'base_url' => env('CARDS_API_BASE_URL'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
