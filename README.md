@@ -19,14 +19,14 @@ help players optimize their lists.
 - Statistical deck analysis (curves, probabilities, matchup)
 - Card display with watermark "SAMPLE"
 - Mobile and desktop friendly
-- Web-application (React +  Node)
+- Web-application
 
 ---
 
 ## 📦 Planned Technology Stack
 
-- **Frontend:** React / Next.js
-- **Backend:** Node.js / Python
+- **Frontend:** ???
+- **Backend:** ???
 - **Database:** ???
 - **AI:** Model integration via external APIs
 - **Hosting:** ???
