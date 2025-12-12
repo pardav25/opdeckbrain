@@ -14,10 +14,13 @@ class DeckBuilder extends Component
     public array $selectedTypes = [];
     public array $selectedCounters = [];
     public string $search = '';
+    public string $textSearch = '';
     public ?int $costMin = null;
     public ?int $costMax = null;
     public string $sortField = 'cost'; // cost | color | power
     public string $sortDirection = 'asc';
+    public ?string $activeImage = null;
+    public ?string $activeImageTitle = null;
 
     public function mount(): void
     {
@@ -30,7 +33,10 @@ class DeckBuilder extends Component
                 'power' => 2000,
                 'color' => 'Blue',
                 'type'  => 'Character',
+                'text' => '[On Play] Look at 5 cards from the top of your deck and place them at the top or bottom of the deck in any order.',
+                'sub_types' => 'Thriller Bark Pirates',
                 'counter_amount' => 1000,
+                'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-077.jpg',
             ],
             [
                 'id'    => 'OP01-015',
@@ -39,7 +45,10 @@ class DeckBuilder extends Component
                 'power' => 4000,
                 'color' => 'Red',
                 'type'  => 'Character',
+                'text' => '[DON!! x1] [When Attacking] You may trash 1 card from your hand: Add up to 1 "Straw Hat Crew" type Character card other than [Tony Tony.Chopper] with a cost of 4 or less from your trash to your hand.',
+                'sub_types' => 'Animal Straw Hat Crew',
                 'counter_amount' => 2000,
+                'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-015.jpg',
             ],
             [
                 'id'    => 'OP01-001',
@@ -48,7 +57,10 @@ class DeckBuilder extends Component
                 'power' => 5000,
                 'color' => 'Red',
                 'type'  => 'Character',
+                'text' => 'testo di prova',
+                'sub_types' => 'Straw Hat Crew',
                 'counter_amount' => 0,
+                'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-015.jpg',
             ],
         ];
     }
@@ -56,6 +68,7 @@ class DeckBuilder extends Component
     public function resetFilters(): void
     {
         $this->search         = '';
+        $this->textSearch     = '';
         $this->costMin        = null;
         $this->costMax        = null;
         $this->selectedColors = [];
@@ -78,6 +91,18 @@ class DeckBuilder extends Component
                 if ($this->search !== '' &&
                     stripos($card['name'], $this->search) === false) {
                     return false;
+                }
+
+                // filtro su testo (card_text) e sottotipi (sub_types)
+                if ($this->textSearch !== '') {
+                    $needle = $this->textSearch;
+
+                    // unisco testo + sottotipi in una sola stringa da cercare
+                    $haystack = ($card['text'] ?? '') . ' ' . ($card['sub_types'] ?? '');
+
+                    if (stripos($haystack, $needle) === false) {
+                        return false;
+                    }
                 }
 
                 // filtro costo minimo
@@ -156,6 +181,7 @@ class DeckBuilder extends Component
         if (!empty($this->selectedColors)) $count++;
         if (!empty($this->selectedTypes)) $count++;
         if (!empty($this->selectedCounters)) $count++;
+        if ($this->textSearch !== '') $count++;
 
         return $count;
     }
@@ -167,17 +193,42 @@ class DeckBuilder extends Component
         $totalCost  = 0;
         $curve      = [];
 
+        // 🛡️ Statistiche counter nel deck
+        // chiavi come stringhe per comodità in Blade
+        $counterStats = [
+            '0'    => 0,
+            '1000' => 0,
+            '2000' => 0,
+        ];
+
         foreach ($this->deck as $entry) {
             $qty  = $entry['quantity'];
-            $cost = $entry['info']['cost'] ?? 0;
+            $info = $entry['info'];
+
+            $cost = $info['cost'] ?? 0;
 
             $totalCards += $qty;
             $totalCost  += $cost * $qty;
 
+            // curva dei costi
             if (!isset($curve[$cost])) {
                 $curve[$cost] = 0;
             }
             $curve[$cost] += $qty;
+
+            // conteggio counter (0 / 1000 / 2000)
+            $cardCounter = isset($info['counter_amount'])
+                ? (int) $info['counter_amount']
+                : 0;
+
+            $key = (string) $cardCounter;
+
+            if (array_key_exists($key, $counterStats)) {
+                $counterStats[$key] += $qty;
+            } else {
+                // se mai arrivasse un valore diverso, puoi decidere di ignorarlo
+                // oppure aggiungere una categoria "altro"
+            }
         }
 
         ksort($curve);
@@ -188,6 +239,7 @@ class DeckBuilder extends Component
                 ? round($totalCost / $totalCards, 2)
                 : 0,
             'curve'      => $curve,
+            'counters'   => $counterStats,
         ];
     }
 
@@ -228,11 +280,29 @@ class DeckBuilder extends Component
             'totalCards'    => count($this->cards),
             'activeFiltersCount' => $this->activeFiltersCount,
             'counter_amount' => $card['counter_amount'] ?? 0,
+            'text'      => $card['card_text'] ?? null,
+            'sub_types' => $card['sub_types'] ?? null,
         ]);
     }
 
     public function toggleSortDirection(): void
     {
         $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+    }
+
+    public function showImage(?string $url, ?string $title = null): void
+    {
+        if (!$url) {
+            return;
+        }
+
+        $this->activeImage = $url;
+        $this->activeImageTitle = $title;
+    }
+
+    public function closeImage(): void
+    {
+        $this->activeImage = null;
+        $this->activeImageTitle = null;
     }
 }

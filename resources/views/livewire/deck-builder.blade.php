@@ -37,7 +37,15 @@
                     class="db-input"
                 >
             </div>
-
+            <div>
+                <label class="db-label">Testo / Sottotipi</label>
+                <input
+                    type="text"
+                    wire:model.live.debounce.300ms="textSearch"
+                    placeholder="Es. Straw Hat Crew, blocker"
+                    class="db-input"
+                >
+            </div>
             <div class="db-filters-row">
                 <div>
                     <label class="db-label">Costo minimo</label>
@@ -188,30 +196,45 @@
             <ul class="db-card-list">
                 @foreach ($filteredCards as $card)
                     <li class="db-card-row">
-                        <div class="db-card-main">
-                            <div class="db-card-name">
-                                {{ $card['name'] }} <span style="color: var(--muted); font-size: 0.75rem;">({{ $card['id'] }})</span>
-                            </div>
-                            <div class="db-card-meta">
-                                <span>Costo {{ $card['cost'] }}</span>
-                                @if (!empty($card['power']))
-                                    <span>Power {{ $card['power'] }}</span>
-                                @endif
-                                @if (!empty($card['color']))
-                                    <span>{{ $card['color'] }}</span>
-                                @endif
-                                @if (!empty($card['type']))
-                                    <span>{{ $card['type'] }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        <button
-                            wire:click="addCard('{{ $card['id'] }}')"
-                            class="db-btn db-btn-primary"
+                    @if (!empty($card['image']))
+                        <div
+                            class="db-card-thumb-wrapper"
+                            wire:click="showImage('{{ $card['image'] }}', '{{ $card['name'] }} ({{ $card['id'] }})')"
                         >
-                            +
-                        </button>
-                    </li>
+                            <img
+                                src="{{ $card['image'] }}"
+                                alt="{{ $card['name'] }}"
+                                class="db-card-thumb"
+                            >
+                        </div>
+                    @endif
+
+                    <div class="db-card-main">
+                        <div class="db-card-name">
+                            {{ $card['name'] }}
+                            <span style="color: var(--muted); font-size: 0.75rem;">({{ $card['id'] }})</span>
+                        </div>
+                        <div class="db-card-meta">
+                            <span>Costo {{ $card['cost'] }}</span>
+                            @if (!empty($card['power']))
+                                <span>Power {{ $card['power'] }}</span>
+                            @endif
+                            @if (!empty($card['color']))
+                                <span>{{ $card['color'] }}</span>
+                            @endif
+                            @if (!empty($card['type']))
+                                <span>{{ $card['type'] }}</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <button
+                        wire:click="addCard('{{ $card['id'] }}')"
+                        class="db-btn db-btn-primary"
+                    >
+                        +
+                    </button>
+                </li>
                 @endforeach
             </ul>
         @endif
@@ -238,31 +261,60 @@
                 <span>Costo medio</span>
                 <span><strong>{{ $stats['avgCost'] }}</strong></span>
             </div>
-            <div>
-    <span class="db-label">Curva dei costi</span>
-    @if (empty($stats['curve']))
-        <p class="db-deck-empty">Aggiungi qualche carta per vedere la curva.</p>
-    @else
-        @php
-            $maxQty = max($stats['curve']);
-        @endphp
+            <div style="margin-top: 0.75rem;">
+                <span class="db-label">Counter nel deck</span>
 
-        <div class="db-curve-chart">
-            @foreach ($stats['curve'] as $cost => $qty)
                 @php
-                    $percent = $maxQty > 0 ? ($qty / $maxQty) * 100 : 0;
+                    $counters = $stats['counters'] ?? ['0' => 0, '1000' => 0, '2000' => 0];
+                    $maxCounter = max($counters);
                 @endphp
-                <div class="db-curve-row">
-                    <div class="db-curve-cost">C{{ $cost }}</div>
-                    <div class="db-curve-bar-track">
-                        <div class="db-curve-bar-fill" style="width: {{ $percent }}%;"></div>
+
+                @if ($maxCounter === 0)
+                    <p class="db-deck-empty">Nessuna carta con counter nel deck.</p>
+                @else
+                    <div class="db-curve-chart">
+                        @foreach (['0', '1000', '2000'] as $counterValue)
+                            @php
+                                $qty = $counters[$counterValue] ?? 0;
+                                $percent = $maxCounter > 0 ? ($qty / $maxCounter) * 100 : 0;
+                            @endphp
+
+                            <div class="db-curve-row">
+                                <div class="db-curve-cost">{{ $counterValue }}</div>
+                                <div class="db-curve-bar-track">
+                                    <div class="db-curve-bar-fill" style="width: {{ $percent }}%;"></div>
+                                </div>
+                                <div class="db-curve-qty">{{ $qty }}</div>
+                            </div>
+                        @endforeach
                     </div>
-                    <div class="db-curve-qty">{{ $qty }}</div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-</div>
+                @endif
+            </div>
+            <div style="margin-top: 0.75rem;">
+                <span class="db-label">Curva dei costi</span>
+                @if (empty($stats['curve']))
+                    <p class="db-deck-empty">Aggiungi qualche carta per vedere la curva.</p>
+                @else
+                    @php
+                        $maxQty = max($stats['curve']);
+                    @endphp
+
+                    <div class="db-curve-chart">
+                        @foreach ($stats['curve'] as $cost => $qty)
+                            @php
+                                $percent = $maxQty > 0 ? ($qty / $maxQty) * 100 : 0;
+                            @endphp
+                            <div class="db-curve-row">
+                                <div class="db-curve-cost">C{{ $cost }}</div>
+                                <div class="db-curve-bar-track">
+                                    <div class="db-curve-bar-fill" style="width: {{ $percent }}%;"></div>
+                                </div>
+                                <div class="db-curve-qty">{{ $qty }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
         </div>
 
         {{-- DECK LIST --}}
@@ -304,4 +356,30 @@
             @endif
         </div>
     </section>
+    @if ($activeImage)
+    <div class="db-modal-backdrop" wire:click="closeImage">
+        <div class="db-modal" wire:click.stop>
+            <div class="db-modal-header">
+                <div class="db-modal-title">
+                    {{ $activeImageTitle ?? 'Anteprima carta' }}
+                </div>
+                <button
+                    type="button"
+                    class="db-btn db-btn-danger"
+                    wire:click="closeImage"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <div class="db-modal-image-wrapper">
+                <img
+                    src="{{ $activeImage }}"
+                    alt="{{ $activeImageTitle ?? 'Card image' }}"
+                    class="db-modal-image"
+                >
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
