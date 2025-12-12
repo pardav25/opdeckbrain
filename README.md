@@ -25,8 +25,6 @@ help players optimize their lists.
 
 ## 📦 Planned Technology Stack
 
-##  Planned Technology Stack
-
 - **Frontend:** Laravel Blade templates with Livewire 3 components, Tailwind CSS 4, and Vite-bundled JavaScript for a responsive, mobile-friendly UI.
 - **Backend:** Laravel 12 (PHP 8.2) monolithic application, leveraging Laravel’s routing, Eloquent ORM, queues, and job system for background processing.
 - **Database:** SQLite by default for local development, with support for MySQL/MariaDB, PostgreSQL, and SQL Server through Laravel’s database abstraction layer for production environments.
