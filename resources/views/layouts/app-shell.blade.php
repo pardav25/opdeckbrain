@@ -108,7 +108,7 @@
                 Creato da <strong>Davide Paradiso</strong> (ZoodiacTCG)
             </span>
 
-            <a href="https://ko-fi.com"
+            <a href="https://ko-fi.com/zoodiactcg"
             target="_blank"
             rel="noopener noreferrer"
             class="hp-footer-kofi">
