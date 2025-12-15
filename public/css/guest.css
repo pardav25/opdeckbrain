@@ -1,0 +1,257 @@
+/* --------------------------------------------------------------
+   BASE LAYOUT GUEST
+-------------------------------------------------------------- */
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        sans-serif;
+    background: radial-gradient(circle at top, #182436 0, #020617 45%, #000 100%);
+    color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --------------------------------------------------------------
+   CARD / WRAPPER
+-------------------------------------------------------------- */
+
+.guest-wrapper {
+    width: 100%;
+    max-width: 380px;
+    padding: 1.5rem;
+}
+
+.guest-card {
+    padding: 2rem 2.5rem;
+    background: linear-gradient(145deg, #0a0f1c, #111a2e 60%, #0c1220);
+    border-radius: 1rem;
+    border: 1px solid rgba(56, 68, 94, 0.4);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+    animation: fadeIn 0.35s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------
+   TITOLI & TESTO
+-------------------------------------------------------------- */
+
+.guest-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    color: #f1f5f9;
+}
+
+.guest-text-muted {
+    text-align: center;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------
+   INPUTS
+-------------------------------------------------------------- */
+
+.guest-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.guest-label {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.guest-input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(71, 85, 105, 0.7);
+    background: rgba(17, 24, 39, 0.85);
+    color: #e5e7eb;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+.guest-input:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+}
+
+.guest-input {
+    max-width: 100%; /* default */
+}
+
+/* 📌 Centriamo meglio gli input dentro la card */
+.guest-input-group {
+    max-width: 100%;
+    width: 100%;
+}
+
+.guest-card form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;  /* 🔥 centra gli input */
+}
+
+/* Gli input si allineano bene dentro la card */
+.guest-input-group,
+.guest-input {
+    width: 100%;
+}
+
+/* --------------------------------------------------------------
+   BUTTONS
+-------------------------------------------------------------- */
+
+.guest-btn {
+    width: 100%;
+    border-radius: 0.6rem;
+    padding: 0.55rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.15s ease-out;
+}
+
+.guest-btn-primary {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #ecfdf5;
+}
+
+.guest-btn-primary:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+}
+
+.guest-btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(71, 85, 105, 0.7);
+    color: #cbd5e1;
+}
+
+.guest-btn-ghost:hover {
+    background: rgba(30, 41, 59, 0.7);
+}
+
+/* --------------------------------------------------------------
+   LINKS
+-------------------------------------------------------------- */
+
+.guest-link {
+    color: #22c55e;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.guest-link:hover {
+    text-decoration: underline;
+}
+
+/* --------------------------------------------------------------
+   ERROR MESSAGES
+-------------------------------------------------------------- */
+
+.guest-error {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: #f87171;
+}
+
+/* --------------------------------------------------------------
+   FORM FOOTER
+-------------------------------------------------------------- */
+
+.guest-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------
+   RESPONSIVE
+-------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+    .guest-card {
+        padding: 1.5rem;
+    }
+}
+
+/* --------------------------------------------------------------
+   BUTTONS (DeckBrain Style)
+-------------------------------------------------------------- */
+
+.db-btn {
+    border-radius: 999px;
+    padding: 0.55rem 1rem;
+    border: 1px solid transparent;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.15s ease-out;
+}
+
+.db-btn-primary {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #ecfdf5;
+    box-shadow: 0 12px 28px rgba(34, 197, 94, 0.25);
+}
+
+.db-btn-primary:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+}
+
+.db-btn-primary:active {
+    transform: translateY(0px) scale(0.97);
+}
+
+.db-btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(75, 85, 99, 0.9);
+    color: #e5e7eb;
+}
+
+.db-btn-ghost:hover {
+    background: rgba(31, 41, 55, 0.9);
+}
+
+/* --------------------------------------------------------------
+   TESTO DESCRITTIVO / INFO
+-------------------------------------------------------------- */
+
+.guest-description {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+    text-align: left;
+}
+
+/* Spazio extra sopra il bottone nei form "singoli" */
+.guest-actions {
+    margin-top: 1rem;
+}

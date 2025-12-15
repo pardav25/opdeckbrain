@@ -22,6 +22,11 @@ class DeckBuilder extends Component
     public string $sortDirection = 'asc';
     public ?string $activeImage = null;
     public ?string $activeImageTitle = null;
+    public ?string $leaderId = null;
+    public bool $selectingLeader = false;
+    public array $leaderColors = [];
+    public ?string $saveMessage = null;
+    public string $saveMessageType = 'success'; // 'success' | 'error'
 
     public function mount(): void
     {
@@ -66,6 +71,19 @@ class DeckBuilder extends Component
                 'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-015.jpg',
                 'attribute' => 'Strike',
             ],
+            [
+                'id'    => 'OP01-006',
+                'name'  => 'Monkey D. Luffy',
+                'cost'  => 5,
+                'power' => 5000,
+                'color' => 'Red Purple',
+                'type'  => 'Leader',
+                'text' => 'testo di prova',
+                'sub_types' => 'Straw Hat Crew',
+                'counter_amount' => 0,
+                'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-015.jpg',
+                'attribute' => 'Strike',
+            ],
         ];
     }
 
@@ -80,6 +98,102 @@ class DeckBuilder extends Component
         $this->sortField      = 'cost';
         $this->sortDirection  = 'asc';
         $this->selectedCounters = [];
+        $this->selectedAttributes = [];
+    }
+
+   #[Computed]
+    public function leaderCard(): ?array
+    {
+        if (!$this->leaderId) {
+            return null;
+        }
+
+        // cerco la carta nella pool (puoi anche cercare nel deck, ma così puoi selezionarla anche prima)
+        $card = collect($this->cards)->firstWhere('id', $this->leaderId);
+
+        return $card ?: null;
+    }
+
+    private function parseLeaderColors(array $card): array
+    {
+        // Prendiamo il campo colore del leader
+        $raw = $card['color'] ?? '';
+
+        // Normalizziamo in stringa e togliamo spazi inutili
+        $raw = trim((string) $raw);
+
+        if ($raw === '') {
+            return [];
+        }
+
+        // Normalizziamo eventuali separatori diversi dallo spazio (/, ,)
+        // "Red/Blue" -> "Red Blue"
+        // "Red, Blue" -> "Red Blue"
+        $normalized = str_replace(['/', ','], ' ', $raw);
+
+        // Ora spezzettiamo su uno o più spazi
+        // "Red Blue" -> ['Red', 'Blue']
+        // "Red" -> ['Red']
+        $parts = preg_split('/\s+/', $normalized);
+
+        // Pulizia: niente stringhe vuote
+        $colors = array_values(array_filter($parts, fn ($c) => $c !== ''));
+
+        return $colors;
+    }
+
+   public function startLeaderSelection(): void
+    {
+        $this->selectingLeader = true;
+
+        // Mostro solo i leader nella lista
+        $this->selectedTypes = ['Leader'];
+
+        // ❌ NON toccare i colori qui.
+        // Verranno aggiornati SOLO dopo che un leader viene scelto.
+    }
+
+    public function cancelLeaderSelection(): void
+    {
+        $this->selectingLeader = false;
+        // torna ai filtri precedenti: per semplicità, svuotiamo il filtro tipo
+        $this->selectedTypes   = [];
+    }
+
+    public function setLeader(string $cardId): void
+    {
+        $card = collect($this->cards)->firstWhere('id', $cardId);
+
+        if (!$card) {
+            return;
+        }
+
+        // sicurezza: solo carte di tipo Leader
+        if (strtolower($card['type'] ?? '') !== 'leader') {
+            return;
+        }
+
+        $this->leaderId        = $cardId;
+        $this->selectingLeader = false;
+
+        // 🎯 estraiamo i colori dal Leader (mono o multi)
+        $colors = $this->parseLeaderColors($card);
+        $this->leaderColors = $colors;
+
+        // Applichiamo i colori del Leader ai filtri
+        if (!empty($colors)) {
+            $this->selectedColors = $colors;
+        } else {
+            $this->selectedColors = [];
+        }
+
+        // Rimuovo filtro "solo Leader" della modalità selezione
+        $this->selectedTypes = [];
+    }
+
+    public function clearLeader(): void
+    {
+        $this->leaderId = null;
     }
 
     #[Computed]
@@ -207,13 +321,15 @@ class DeckBuilder extends Component
         $totalCost  = 0;
         $curve      = [];
 
-        // 🛡️ Statistiche counter nel deck
-        // chiavi come stringhe per comodità in Blade
+        // Statistiche counter nel deck
         $counterStats = [
             '0'    => 0,
             '1000' => 0,
             '2000' => 0,
         ];
+
+        // Conteggio copie di carte Leader nel deck
+        $leaderCount = 0;
 
         foreach ($this->deck as $entry) {
             $qty  = $entry['quantity'];
@@ -224,13 +340,13 @@ class DeckBuilder extends Component
             $totalCards += $qty;
             $totalCost  += $cost * $qty;
 
-            // curva dei costi
+            // curva costi
             if (!isset($curve[$cost])) {
                 $curve[$cost] = 0;
             }
             $curve[$cost] += $qty;
 
-            // conteggio counter (0 / 1000 / 2000)
+            // counter
             $cardCounter = isset($info['counter_amount'])
                 ? (int) $info['counter_amount']
                 : 0;
@@ -239,46 +355,92 @@ class DeckBuilder extends Component
 
             if (array_key_exists($key, $counterStats)) {
                 $counterStats[$key] += $qty;
-            } else {
-                // se mai arrivasse un valore diverso, puoi decidere di ignorarlo
-                // oppure aggiungere una categoria "altro"
+            }
+
+            // leader
+            if (strtolower($info['type'] ?? '') === 'leader') {
+                $leaderCount += $qty;
             }
         }
 
         ksort($curve);
 
         return [
-            'totalCards' => $totalCards,
-            'avgCost'    => $totalCards > 0
+            'totalCards'  => $totalCards,
+            'avgCost'     => $totalCards > 0
                 ? round($totalCost / $totalCards, 2)
                 : 0,
-            'curve'      => $curve,
-            'counters'   => $counterStats,
+            'curve'       => $curve,
+            'counters'    => $counterStats,
+            'leaderCount' => $leaderCount, // 👈 nuovo
         ];
     }
 
     #[Computed]
     public function deckValidation(): array
     {
-        $total = $this->stats['totalCards'] ?? 0;
+        $totalCards  = $this->stats['totalCards']  ?? 0;
+        $leaderCount = $this->stats['leaderCount'] ?? 0;
 
-        if ($total < 50) {
+        // carte valide ai fini del formato: escludiamo le copie Leader
+        $effectiveTotal = max(0, $totalCards - $leaderCount);
+
+        // 1) Validazione numero carte (escluso Leader)
+        if ($effectiveTotal < 50) {
             return [
-                'status' => 'error',
-                'message' => 'Il deck contiene solo ' . $total . ' carte. Ne servono esattamente 50.',
+                'status'  => 'error',
+                'message' => 'Il deck contiene solo ' . $effectiveTotal . ' carte. Ne servono esattamente 50.',
             ];
         }
 
-        if ($total > 50) {
+        if ($effectiveTotal > 50) {
             return [
-                'status' => 'error',
-                'message' => 'Il deck contiene ' . $total . ' carte. Ne servono esattamente 50.',
+                'status'  => 'error',
+                'message' => 'Il deck contiene ' . $effectiveTotal . ' carte. Ne servono esattamente 50.',
             ];
         }
 
+        // 2) Validazione colori, solo se esiste un Leader selezionato
+        if ($this->leaderId && !empty($this->leaderColors)) {
+            $allowed = array_map('strtolower', $this->leaderColors);
+            $invalidCards = [];
+
+            foreach ($this->deck as $entry) {
+                $info = $entry['info'] ?? null;
+
+                if (!$info) {
+                    continue;
+                }
+
+                // saltiamo i Leader
+                if (strtolower($info['type'] ?? '') === 'leader') {
+                    continue;
+                }
+
+                $cardColor = strtolower($info['color'] ?? '');
+
+                // se la carta ha un colore non permesso dal Leader → errore
+                if ($cardColor !== '' && !in_array($cardColor, $allowed, true)) {
+                    $invalidCards[] = $info['name'] . ' (' . ($info['id'] ?? '??') . ')';
+                }
+            }
+
+            if (!empty($invalidCards)) {
+                // Mostriamo solo le prime 3 per non esplodere il messaggio
+                $preview = implode(', ', array_slice($invalidCards, 0, 3));
+
+                return [
+                    'status'  => 'error',
+                    'message' => 'Il deck contiene carte con colori non compatibili con il Leader selezionato.'
+                        . ' Esempi: ' . $preview . '.',
+                ];
+            }
+        }
+
+        // Se è tutto ok
         return [
-            'status' => 'ok',
-            'message' => 'Il deck contiene 50 carte (formato valido).',
+            'status'  => 'ok',
+            'message' => 'Il deck contiene 50 carte e rispetta i colori del Leader: formato valido.',
         ];
     }
 
@@ -355,6 +517,12 @@ class DeckBuilder extends Component
             'text'      => $card['card_text'] ?? null,
             'sub_types' => $card['sub_types'] ?? null,
             'deckValidation'     => $this->deckValidation,
+            'leaderId'         => $this->leaderId,
+            'leaderCard'         => $this->leaderCard,
+            'selectingLeader'    => $this->selectingLeader,
+            'leaderColors'       => $this->leaderColors,
+            'saveMessage'        => $this->saveMessage,
+            'saveMessageType'    => $this->saveMessageType,
         ]);
     }
 
@@ -378,4 +546,48 @@ class DeckBuilder extends Component
         $this->activeImage = null;
         $this->activeImageTitle = null;
     }
+
+    public function saveDeck(): void
+    {
+        $validation = $this->deckValidation;
+
+        if ($validation['status'] !== 'ok') {
+            // reset messaggio per forzare Livewire a ricreare il blocco
+            $this->saveMessage = null;
+
+            $this->saveMessageType = 'error';
+            $this->saveMessage = 'Impossibile salvare il deck: ' . $validation['message'];
+            return;
+        }
+
+        if (!$this->leaderId) {
+            $this->saveMessage = null;
+
+            $this->saveMessageType = 'error';
+            $this->saveMessage = 'Impossibile salvare: devi prima selezionare un Leader per il deck.';
+            return;
+        }
+
+        $cardsPayload = [];
+        foreach ($this->deck as $cardId => $entry) {
+            $cardsPayload[] = [
+                'id'       => $cardId,
+                'quantity' => $entry['quantity'],
+            ];
+        }
+
+        Deck::create([
+            'name'          => $this->deckName ?: 'Deck senza nome',
+            'leader_id'     => $this->leaderId,
+            'leader_colors' => $this->leaderColors,
+            'cards'         => $cardsPayload,
+        ]);
+
+        $this->saveMessage = null;
+
+        $this->saveMessageType = 'success';
+        $this->saveMessage = 'Deck salvato con successo.';
+    }
+
+    
 }

@@ -154,6 +154,11 @@
                         <input type="checkbox" wire:model.live="selectedTypes" value="Stage">
                         <span>Stage</span>
                     </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedTypes" value="Leader">
+                        <span>Leader</span>
+                    </label>
                 </div>
             </div>
             <div>
@@ -261,6 +266,22 @@
                     </div>
 
                    <div style="display:flex; gap:0.3rem;">
+                        {{-- bottone Leader, solo se la carta è di tipo Leader --}}
+                        @if (strtolower($card['type'] ?? '') === 'leader')
+                        <button
+                            wire:click="setLeader('{{ $card['id'] }}')"
+                            class="db-btn"
+                            title="Imposta come Leader"
+                            style="
+                                background: transparent;
+                                border: 1px solid var(--accent);
+                                color: var(--accent);
+                                padding-inline: 0.5rem;
+                            "
+                        >
+                            👑
+                        </button>
+                        @else
                         <button
                             wire:click="addCard('{{ $card['id'] }}')"
                             class="db-btn db-btn-primary"
@@ -277,6 +298,7 @@
                         >
                             + 4
                         </button>
+                        @endif
                     </div>
                 </li>
                 @endforeach
@@ -292,16 +314,86 @@
                 <p class="db-panel-caption">
                     Aggiungi carte dal pannello a sinistra e osserva come cambiano le statistiche.
                 </p>
+                @if ($selectingLeader)
+                    <div class="db-selecting-leader-hint">
+                        Modalità scelta Leader attiva: clicca su “Leader” su una carta di tipo Leader a sinistra.
+                    </div>
+                @endif
             </div>
 
-            <div class="db-deckname-wrapper">
+            <div class="db-deck-header-right">
                 <input
                     type="text"
                     wire:model.live="deckName"
                     class="db-deckname-input"
                     placeholder="Nome del deck"
                 >
+
+                <div
+                    class="db-leader-box"
+                    @if($selectingLeader)
+                        wire:click="cancelLeaderSelection"
+                    @else
+                        wire:click="startLeaderSelection"
+                    @endif
+                >
+                    @if ($leaderCard)
+                        <div class="db-leader-thumb">
+                            @if (!empty($leaderCard['image']))
+                                <img src="{{ $leaderCard['image'] }}" alt="{{ $leaderCard['name'] }}">
+                            @endif
+                        </div>
+                        <div class="db-leader-labels">
+                            <div class="db-leader-label-top">Leader</div>
+                            <div class="db-leader-label-main">
+                                {{ $leaderCard['name'] ?? '' }}
+                            </div>
+                        </div>
+                    @else
+                        <div class="db-leader-label-empty">
+                            Seleziona Leader
+                        </div>
+                    @endif
+                </div>
+                <button
+                    type="button"
+                    wire:click="saveDeck"
+                    wire:loading.attr="disabled"
+                    wire:target="saveDeck"
+                    class="db-btn db-btn-primary"
+                    style="white-space: nowrap;"
+                >
+                    <span wire:loading.remove wire:target="saveDeck">
+                        Salva deck
+                    </span>
+
+                    <span wire:loading wire:target="saveDeck">
+                        Salvataggio…
+                    </span>
+                </button>
             </div>
+            @if ($saveMessage)
+                <div
+                    x-data="{ show: true }"
+                    x-init="setTimeout(() => show = false, 3000)"
+                    x-show="show"
+                    x-transition.opacity.duration.300ms
+                    style="
+                        margin-top: 0.75rem;
+                        margin-bottom: 0.25rem;
+                        padding: 0.6rem 0.75rem;
+                        border-radius: 0.75rem;
+                        font-size: 0.85rem;
+                        line-height: 1.3;
+                        {{ $saveMessageType === 'success'
+                            ? 'background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #bbf7d0;'
+                            : 'background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fecaca;'
+                        }}
+                    "
+                >
+                    {{ $saveMessage }}
+                </div>
+            @endif
         </div>
         {{-- VALIDAZIONE DECK --}}
         @if ($deckValidation['status'] === 'error')
@@ -337,8 +429,31 @@
         {{-- STATISTICHE --}}
         <div class="db-stats">
             <div class="db-stats-row">
+               <span class="db-label">Colori Leader</span>
+                @if ($leaderCard && !empty($leaderColors))
+                    <div class="db-color-leader-row">
+                        <div class="db-color-badges">
+                            @foreach ($leaderColors as $color)
+                                @php $slug = strtolower($color); @endphp
+                                <span class="db-color-badge db-color-badge--{{ $slug }}">
+                                    {{ $color }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                @elseif ($leaderCard)
+                    <p class="db-panel-caption" style="margin-top: 0.15rem;">
+                        Nessun colore rilevato per il Leader.
+                    </p>
+                @else
+                    <p class="db-panel-caption" style="margin-top: 0.15rem;">
+                        Nessun Leader selezionato.
+                    </p>
+                @endif
+            </div>
+            <div class="db-stats-row">
                 <span>Totale carte</span>
-                <span><strong>{{ $stats['totalCards'] }}</strong></span>
+                <span><strong>{{ $stats['totalCards'] - $stats['leaderCount'] }}</strong></span>
             </div>
             <div class="db-stats-row">
                 <span>Costo medio</span>
@@ -447,6 +562,7 @@
             @endif
         </div>
     </section>
+
     @if ($activeImage)
     <div class="db-modal-backdrop" wire:click="closeImage">
         <div class="db-modal" wire:click.stop>
