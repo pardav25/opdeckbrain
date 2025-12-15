@@ -42,6 +42,29 @@
         </div>
     </header>
 
+    {{-- NAV MOBILE --}}
+    <nav class="hp-mobile-nav">
+        <a href="{{ route('home') }}"
+           class="hp-mobile-nav-item {{ request()->routeIs('home') ? 'hp-mobile-nav-item--active' : '' }}">
+            <span>Homepage</span>
+        </a>
+
+         <a href="{{ route('home') }}"
+           class="hp-mobile-nav-item {{ request()->routeIs('decks') ? 'hp-mobile-nav-item--active' : '' }}">
+            <span>I miei deck</span>
+        </a>
+
+        <a href="{{ route('deck.builder') }}"
+           class="hp-mobile-nav-item {{ request()->routeIs('deck.builder') ? 'hp-mobile-nav-item--active' : '' }}">
+            <span>Crea deck</span>
+        </a>
+
+        <a href="{{ route('favorites') }}"
+           class="hp-mobile-nav-item {{ request()->routeIs('favorites') ? 'hp-mobile-nav-item--active' : '' }}">
+            <span>Preferiti</span>
+        </a>
+    </nav>
+
     <div class="hp-layout">
         {{-- SIDEBAR --}}
         <aside class="hp-sidebar">
@@ -78,7 +101,24 @@
             @yield('content')
         </main>
     </div>
+    {{-- FOOTER --}}
+    <footer class="hp-footer">
+        <div class="hp-footer-inner">
+            <span class="hp-footer-text">
+                Creato da <strong>Davide Paradiso</strong> (ZoodiacTCG)
+            </span>
 
+            <a href="https://ko-fi.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hp-footer-kofi">
+                <img src="https://storage.ko-fi.com/cdn/cup-border.png"
+                    alt="Ko-fi"
+                    class="hp-kofi-icon">
+                <span>Supporta il progetto</span>
+            </a>
+        </div>
+    </footer>
     @livewireScripts
 </body>
 </html>
