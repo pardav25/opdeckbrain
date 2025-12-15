@@ -104,6 +104,38 @@
                 </div>
             </div>
             <div>
+                <label class="db-label">Attributo</label>
+
+                <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedAttributes" value="Slash">
+                        <span>Slash</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedAttributes" value="Strike">
+                        <span>Strike</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedAttributes" value="Wisdom">
+                        <span>Wisdom</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedAttributes" value="Ranged">
+                        <span>Ranged</span>
+                    </label>
+
+                    <label style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" wire:model.live="selectedAttributes" value="Special">
+                        <span>Special</span>
+                    </label>
+
+                </div>
+            </div>
+            <div>
                 <label class="db-label">Tipo di carta</label>
 
                 <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
@@ -228,12 +260,24 @@
                         </div>
                     </div>
 
-                    <button
-                        wire:click="addCard('{{ $card['id'] }}')"
-                        class="db-btn db-btn-primary"
-                    >
-                        +
-                    </button>
+                   <div style="display:flex; gap:0.3rem;">
+                        <button
+                            wire:click="addCard('{{ $card['id'] }}')"
+                            class="db-btn db-btn-primary"
+                            title="Aggiungi 1 copia"
+                        >
+                            + 1
+                        </button>
+
+                        <button
+                            wire:click="addFourCards('{{ $card['id'] }}')"
+                            class="db-btn db-btn-primary"
+                            title="Aggiungi 4 copie"
+                            style=""
+                        >
+                            + 4
+                        </button>
+                    </div>
                 </li>
                 @endforeach
             </ul>
@@ -244,12 +288,51 @@
     <section class="db-panel">
         <div class="db-panel-header">
             <div>
-                <h2 class="db-panel-title">Deck: {{ $deckName }}</h2>
+                <h2 class="db-panel-title">Deck</h2>
                 <p class="db-panel-caption">
                     Aggiungi carte dal pannello a sinistra e osserva come cambiano le statistiche.
                 </p>
             </div>
+
+            <div class="db-deckname-wrapper">
+                <input
+                    type="text"
+                    wire:model.live="deckName"
+                    class="db-deckname-input"
+                    placeholder="Nome del deck"
+                >
+            </div>
         </div>
+        {{-- VALIDAZIONE DECK --}}
+        @if ($deckValidation['status'] === 'error')
+            <div style="
+                margin-bottom: 1rem;
+                padding: 0.75rem;
+                border-radius: 0.75rem;
+                background: rgba(239, 68, 68, 0.15);
+                border: 1px solid rgba(239, 68, 68, 0.4);
+                color: #fca5a5;
+                font-size: 0.85rem;
+                line-height: 1.3;
+            ">
+                ⚠️ {{ $deckValidation['message'] }}
+            </div>
+        @endif
+
+        @if ($deckValidation['status'] === 'ok')
+            <div style="
+                margin-bottom: 1rem;
+                padding: 0.75rem;
+                border-radius: 0.75rem;
+                background: rgba(34, 197, 94, 0.15);
+                border: 1px solid rgba(34, 197, 94, 0.4);
+                color: #86efac;
+                font-size: 0.85rem;
+                line-height: 1.3;
+            ">
+                ✔️ {{ $deckValidation['message'] }}
+            </div>
+        @endif
 
         {{-- STATISTICHE --}}
         <div class="db-stats">
@@ -341,13 +424,21 @@
                                     wire:click="removeCard('{{ $cardId }}')"
                                     class="db-btn db-btn-danger"
                                 >
-                                    –
+                                    – 1
                                 </button>
                                 <button
                                     wire:click="addCard('{{ $cardId }}')"
                                     class="db-btn db-btn-primary"
                                 >
-                                    +
+                                    + 1
+                                </button>
+                                <button
+                                    wire:click="removeAllCopies('{{ $cardId }}')"
+                                    class="db-btn"
+                                    title="Rimuovi tutte le copie"
+                                    style="background: transparent; border: 1px solid var(--border); color: var(--muted); padding-inline: 0.5rem;"
+                                >
+                                    ✕
                                 </button>
                             </div>
                         </li>

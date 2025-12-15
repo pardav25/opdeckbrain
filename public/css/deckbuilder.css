@@ -434,3 +434,26 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.db-deckname-input {
+    min-width: 0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(55, 65, 81, 0.9);
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    max-width: 220px;
+}
+
+.db-deckname-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+}
+
+.db-deckname-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}

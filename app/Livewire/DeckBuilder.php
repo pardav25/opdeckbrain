@@ -13,6 +13,7 @@ class DeckBuilder extends Component
     public array $selectedColors = [];
     public array $selectedTypes = [];
     public array $selectedCounters = [];
+    public array $selectedAttributes = [];
     public string $search = '';
     public string $textSearch = '';
     public ?int $costMin = null;
@@ -37,6 +38,7 @@ class DeckBuilder extends Component
                 'sub_types' => 'Thriller Bark Pirates',
                 'counter_amount' => 1000,
                 'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-077.jpg',
+                'attribute' => 'Special',
             ],
             [
                 'id'    => 'OP01-015',
@@ -49,6 +51,7 @@ class DeckBuilder extends Component
                 'sub_types' => 'Animal Straw Hat Crew',
                 'counter_amount' => 2000,
                 'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-015.jpg',
+                'attribute' => 'Slash',
             ],
             [
                 'id'    => 'OP01-001',
@@ -61,6 +64,7 @@ class DeckBuilder extends Component
                 'sub_types' => 'Straw Hat Crew',
                 'counter_amount' => 0,
                 'image' => 'https://www.optcgapi.com/media/static/Card_Images/OP01-015.jpg',
+                'attribute' => 'Strike',
             ],
         ];
     }
@@ -133,7 +137,7 @@ class DeckBuilder extends Component
                     }
                 }
 
-                // 🔥 filtro counter (solo Character)
+                // filtro counter (solo Character)
                 if (!empty($selectedCountersInt)) {
                     // se non è Character → esclusa
                     if (strtolower($card['type'] ?? '') !== 'character') {
@@ -145,6 +149,15 @@ class DeckBuilder extends Component
                         : 0;
 
                     if (!in_array($cardCounter, $selectedCountersInt, true)) {
+                        return false;
+                    }
+                }
+
+                if (!empty($this->selectedAttributes)) {
+                    $cardAttribute = strtolower($card['attribute'] ?? '');
+
+                    // Se la carta non ha attributo, viene esclusa
+                    if (!in_array($cardAttribute, array_map('strtolower', $this->selectedAttributes))) {
                         return false;
                     }
                 }
@@ -181,6 +194,7 @@ class DeckBuilder extends Component
         if (!empty($this->selectedColors)) $count++;
         if (!empty($this->selectedTypes)) $count++;
         if (!empty($this->selectedCounters)) $count++;
+        if (!empty($this->selectedAttributes)) $count++;
         if ($this->textSearch !== '') $count++;
 
         return $count;
@@ -243,6 +257,31 @@ class DeckBuilder extends Component
         ];
     }
 
+    #[Computed]
+    public function deckValidation(): array
+    {
+        $total = $this->stats['totalCards'] ?? 0;
+
+        if ($total < 50) {
+            return [
+                'status' => 'error',
+                'message' => 'Il deck contiene solo ' . $total . ' carte. Ne servono esattamente 50.',
+            ];
+        }
+
+        if ($total > 50) {
+            return [
+                'status' => 'error',
+                'message' => 'Il deck contiene ' . $total . ' carte. Ne servono esattamente 50.',
+            ];
+        }
+
+        return [
+            'status' => 'ok',
+            'message' => 'Il deck contiene 50 carte (formato valido).',
+        ];
+    }
+
     public function addCard(string $cardId): void
     {
         if (!isset($this->deck[$cardId])) {
@@ -259,6 +298,32 @@ class DeckBuilder extends Component
         }
     }
 
+    public function addFourCards(string $cardId): void
+    {
+        $card = collect($this->cards)->firstWhere('id', $cardId);
+
+        if (!$card) {
+            return;
+        }
+
+        // numero massimo copie concesse (standard OP è 4)
+        $maxCopies = 4;
+
+        if (!isset($this->deck[$cardId])) {
+            // aggiunge 4 copie se la carta non esiste nel deck
+            $this->deck[$cardId] = [
+                'info'     => $card,
+                'quantity' => $maxCopies,
+            ];
+        } else {
+            // aggiunge copie fino a massimo 4
+            $current = $this->deck[$cardId]['quantity'];
+            $newQty  = min($current + $maxCopies, $maxCopies);
+
+            $this->deck[$cardId]['quantity'] = $newQty;
+        }
+    }
+
     public function removeCard(string $cardId): void
     {
         if (!isset($this->deck[$cardId])) {
@@ -268,6 +333,13 @@ class DeckBuilder extends Component
         $this->deck[$cardId]['quantity']--;
 
         if ($this->deck[$cardId]['quantity'] <= 0) {
+            unset($this->deck[$cardId]);
+        }
+    }
+
+    public function removeAllCopies(string $cardId): void
+    {
+        if (isset($this->deck[$cardId])) {
             unset($this->deck[$cardId]);
         }
     }
@@ -282,6 +354,7 @@ class DeckBuilder extends Component
             'counter_amount' => $card['counter_amount'] ?? 0,
             'text'      => $card['card_text'] ?? null,
             'sub_types' => $card['sub_types'] ?? null,
+            'deckValidation'     => $this->deckValidation,
         ]);
     }
 
